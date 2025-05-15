@@ -1,0 +1,10 @@
+.yarn/*
+!.yarn/releases
+!.yarn/plugins
+
+# Ignore all build output
+/dist
+/build
+
+# Node dependencies
+node_modules/

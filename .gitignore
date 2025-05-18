@@ -8,3 +8,10 @@
 
 # Node dependencies
 node_modules/
+
+# IDE/editor settings
+.vscode/
+.idea/
+
+# Prevent npm's lockfile from being committed
+package-lock.json

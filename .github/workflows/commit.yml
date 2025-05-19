@@ -1,0 +1,50 @@
+name: Daily Commit Push
+
+on:
+  schedule:
+    - cron: '0 12 * * *'
+  workflow_dispatch:
+
+jobs:
+  commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          ref: main
+
+      - name: Set default env var
+        run: echo "skip_commit=false" >> $GITHUB_ENV
+
+      - name: Configure Git
+        run: |
+          git config user.name "irsol"
+          git config user.email "irsol@users.noreply.github.com"
+
+      - name: Move one staged problem to problems/
+        run: |
+          NEXT=$(find staged -mindepth 1 -maxdepth 1 -type d | sort | head -n 1)
+          if [ -n "$NEXT" ]; then
+            echo "Moving $NEXT to problems/"
+            mv "$NEXT" problems/
+          else
+            echo "No files left to push."
+            echo "skip_commit=true" >> $GITHUB_ENV
+          fi
+
+      - name: Commit and push if changes
+        if: always()
+        run: |
+          if [ "$skip_commit" = "true" ]; then
+            echo "Skipping commit: no files moved."
+            exit 0
+          fi
+
+          if [ -n "$(git status --porcelain)" ]; then
+            git add problems/
+            git commit -m "feat: add new solution"
+            git push
+          else
+            echo "No changes to commit."
+          fi

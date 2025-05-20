@@ -2,48 +2,70 @@ name: Daily Commit Push
 
 on:
   schedule:
-    - cron: '0 13 * * *'
+    - cron: '0 14 * * *'
   workflow_dispatch:
 
 jobs:
   commit:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
+      - name: Checkout main branch
         uses: actions/checkout@v3
         with:
           ref: main
 
-      - name: Set default env var
-        run: echo "skip_commit=false" >> $GITHUB_ENV
+      - name: Checkout staging branch
+        run: |
+          git fetch origin staging || git checkout -b staging
+          git checkout staging
 
       - name: Configure Git
         run: |
           git config user.name "irsol"
           git config user.email "irsol@users.noreply.github.com"
 
-      - name: Move one staged problem to problems/
+      - name: Find first problem to move
+        id: find_problem
         run: |
-          NEXT=$(find staged -mindepth 1 -maxdepth 1 -type d | sort | head -n 1)
-          if [ -n "$NEXT" ]; then
-            echo "Moving $NEXT to problems/"
-            mv "$NEXT" problems/
+          FILES=$(git ls-files --others --exclude-standard)
+          PROBLEM_DIR=$(echo "$FILES" | grep -v "^problems/" | head -n 1 | xargs dirname | sort -u | head -n 1)
+          if [ -n "$PROBLEM_DIR" ]; then
+            echo "Found problem dir: $PROBLEM_DIR"
+            echo "PROBLEM_DIR=$PROBLEM_DIR" >> $GITHUB_ENV
+            echo "SKIP_COMMIT=false" >> $GITHUB_ENV
           else
-            echo "No files left to push."
-            echo "skip_commit=true" >> $GITHUB_ENV
+            echo "No new problems found to commit"
+            echo "SKIP_COMMIT=true" >> $GITHUB_ENV
           fi
 
-      - name: Commit and push if changes
+      - name: Move problem to problems directory
         run: |
           if [ "$SKIP_COMMIT" = "true" ]; then
-            echo "Skipping commit: no files moved."
+            echo "Skipping move: no problems found."
             exit 0
           fi
+
+          # Move the files
+          mv "$PROBLEM_DIR"/* problems/
+
+          # Clean up empty directory
+          rmdir "$PROBLEM_DIR" || true
+
+      - name: Commit and push changes to main
+        run: |
+          if [ "$SKIP_COMMIT" = "true" ]; then
+            echo "Skipping commit: no problems found."
+            exit 0
+          fi
+
+          git checkout main
+          git checkout staging -- problems/
 
           if [ -n "$(git status --porcelain)" ]; then
             git add problems/
             git commit -m "feat: add new solution"
-            git push
+            git push origin main
+            echo "Successfully committed new problem"
           else
-            echo "No changes to commit."
+            echo "No changes to commit"
           fi

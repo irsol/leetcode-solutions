@@ -2,7 +2,7 @@ name: Daily Commit Push
 
 on:
   schedule:
-    - cron: '0 12 * * *'
+    - cron: '0 13 * * *'
   workflow_dispatch:
 
 jobs:
@@ -34,9 +34,8 @@ jobs:
           fi
 
       - name: Commit and push if changes
-        if: always()
         run: |
-          if [ "$skip_commit" = "true" ]; then
+          if [ "$SKIP_COMMIT" = "true" ]; then
             echo "Skipping commit: no files moved."
             exit 0
           fi

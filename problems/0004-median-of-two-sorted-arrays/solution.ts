@@ -12,7 +12,7 @@ export function findMedianSortedArraysSimple(nums1: number[], nums2: number[]): 
         };
     };
 
-    // Handle cases when any remaining nums left in the arrays
+    // Handle cases when any nums left in the arrays
     while (i < nums1.length) {
         mergedArrays.push(nums1[i]);
         i++;

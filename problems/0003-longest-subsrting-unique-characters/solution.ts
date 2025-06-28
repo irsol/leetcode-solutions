@@ -11,11 +11,11 @@ export function lengthOfLongestSubstring(s: string): number {
         while (charSet.has(s[right])) {
             charSet.delete(s[left]);
             left++;
-        }
+        };
 
         charSet.add(s[right]);
         maxLength = Math.max(maxLength, right - left + 1);
-    }
+    };
 
     return maxLength;
 };
